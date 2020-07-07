@@ -51,6 +51,10 @@ namespace adapter {
 /// true, `callback`(if there's one)) in AdapterManager.
 #define REGISTER_ADAPTER(name)                                                 \
  public:                                                                       \
+  /**                                                                          \
+   * @brief 我感觉这个主要是针对topic_name 的，不同的topic_name 在不同的模块里需不需要  \
+   * sub或者需不需要pub，用这个函数定就好了。public下面这几个函数都是用作给别人调用的      \
+   */                                                                          \
   static void Enable##name(const std::string &topic_name,                      \
                            AdapterConfig::Mode mode,                           \
                            int message_history_limit) {                        \
@@ -64,11 +68,11 @@ namespace adapter {
    */                                                                          \
   static name##Adapter *Get##name() {                                          \
     return instance()->InternalGet##name();                                    \
-  }
-  /**
-   * @brief 这个现在看不懂，因为用了很多.proto文件生成类里的方法，都不知道是干啥的
-   *  所以得对比着看，回家对着看吧。
-   */
+  }                                                                            \
+  /**                                                                          \
+   * @brief 这个现在看不懂，因为用了很多.proto文件生成类里的方法，都不知道是干啥的        \
+   *  所以得对比着看，回家对着看吧。                                                \
+   */                                                                          \
   static bool Feed##name##File(const std::string &proto_file) {                \
     if (!instance()->name##_) {                                                \
       AERROR << "Initialize adapter before feeding protobuf";                  \
