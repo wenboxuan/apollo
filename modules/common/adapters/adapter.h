@@ -156,7 +156,7 @@ class Adapter {
    */
   void Observe() {
     std::lock_guard<std::mutex> lock(mutex_);
-    observed_queue_ = data_queue_;
+    observed_queue_ = data_queue_; // std::list<std::shared_ptr<D>>
   }
 
   /**
@@ -182,13 +182,13 @@ class Adapter {
    * Please call Empty() to make sure that there is data in the
    * queue before calling GetOldestObserved().
    */
-  const D& GetLatestObserved() const {
+  const D& GetLatestObserved() const { // 以canbus::Chassis为例，此处是得到最新的canbus::Chassis信息
     std::lock_guard<std::mutex> lock(mutex_);
     DCHECK(!observed_queue_.empty())
         << "The view of data queue is empty. No data is received yet or you "
            "forgot to call Observe()"
         << ":" << topic_name_;
-    return *observed_queue_.front();
+    return *observed_queue_.front(); // std::list<std::shared_ptr<D>>
   }
 
   /**
@@ -253,7 +253,7 @@ class Adapter {
   }
 
   void SetLatestPublished(const D& data) {
-    latest_published_data_.reset(new D(data));
+    latest_published_data_.reset(new D(data)); // std::unique_ptr<D>
   }
 
   const D* GetLatestPublished() {
@@ -320,8 +320,8 @@ class Adapter {
   template <typename InputMessageType>
   bool DumpMessage(
       const typename std::enable_if<
-          !std::is_base_of<google::protobuf::Message, InputMessageType>::value,
-          InputMessageType>::type& message) {
+          !std::is_base_of<google::protobuf::Message, InputMessageType>::value, // 这个逗哈，当InputMessageType与google::protobuf::Message
+          InputMessageType>::type& message) {                                   // 没关系的时候，!std::is_base_of才是真，才用InputMessageType 否则没有类型
     return true;
   }
 
@@ -331,11 +331,11 @@ class Adapter {
   template <typename InputMessageType>
   bool DumpMessage(
       const typename std::enable_if<
-          std::is_base_of<google::protobuf::Message, InputMessageType>::value,
+          std::is_base_of<google::protobuf::Message, InputMessageType>::value, // std::is_base_of 前面的是后面的基类，或者二者类型相同时，为真。
           InputMessageType>::type& message) {
     using google::protobuf::Message;
-    auto descriptor = message.GetDescriptor();
-    auto header_descriptor = descriptor->FindFieldByName("header");
+    auto descriptor = message.GetDescriptor(); // GetDescriptor()是proto编译后生成类里面的方法，回去看一下。
+    auto header_descriptor = descriptor->FindFieldByName("header"); // descriptor 这东西是什么类型？得从GetDescriptor()的返回值看，然后才能追他的FindFieldByName方法
     if (header_descriptor == nullptr) {
       ADEBUG << "Fail to find header field in pb.";
       return false;
