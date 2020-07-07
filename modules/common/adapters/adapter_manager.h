@@ -96,27 +96,28 @@ namespace adapter {
   void InternalEnable##name(const std::string &topic_name,                     \
                             AdapterConfig::Mode mode,                          \
                             int message_history_limit) {                       \
-    name##_.reset(                                                             \
+    name##_.reset(                                                             \ //Chassis_.reset()是重置这个智能指针
         new name##Adapter(#name, topic_name, message_history_limit));          \
     if (mode != AdapterConfig::PUBLISH_ONLY && node_handle_) {                 \
       name##subscriber_ =                                                      \
           node_handle_->subscribe(topic_name, message_history_limit,           \
-                                  &name##Adapter::OnReceive, name##_.get());   \
+                                  &name##Adapter::OnReceive, name##_.get());   \ // 这个OnReceive是定义在Adapter里面的回调函数
     }                                                                          \
     if (mode != AdapterConfig::RECEIVE_ONLY && node_handle_) {                 \
-      name##publisher_ = node_handle_->advertise<name##Adapter::DataType>(     \
-          topic_name, message_history_limit);                                  \
+      name##publisher_ = node_handle_->advertise<name##Adapter::DataType>(     \ // name##Adapter::DataType = Adapter<canbus::Chassis>::canbus::Chassis
+          topic_name, message_history_limit);                                  \   // name##Adapter = ChassisAdapter = Adapter<canbus::Chassis>
     }                                                                          \
                                                                                \
     observers_.push_back([this]() { name##_->Observe(); });                    \
   }                                                                            \
-  name##Adapter *InternalGet##name() { return name##_.get(); }                 \
-  void InternalPublish##name(const name##Adapter::DataType &data) {            \
-    /* Only publish ROS msg if node handle is initialized. */                  \
-    if (node_handle_) {                                                        \
+  name##Adapter *InternalGet##name() { return name##_.get(); }                 \ // 用来得到 指向Adapter<canbus::Chassis>的普通指针
+  void InternalPublish##name(const name##Adapter::DataType &data) {            \ // InternalPublishChassis()这个函数，我理解是不会显式出现在其他模块里的，因为不是static的，
+    /* Only publish ROS msg if node handle is initialized. */                  \         // 它在别人用AdapterManager::PublishChassis()时候被调用。
+    if (node_handle_) {                                                        \         // 
       name##publisher_.publish(data);                                          \
     }                                                                          \
-    name##_->SetLatestPublished(data);                                         \
+    name##_->SetLatestPublished(data);                                         \ // name##_ 表示实例化后的各个类的智能指针 比如 
+                                                                                 // Chassis_ = unique_ptr(ChassisAdapter) = unique_ptr(Adapter<canbus::Chassis>) 
   }
 
 /**
